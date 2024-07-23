@@ -1,52 +1,64 @@
 import streamlit as st
+import requests
 
-st.header("GPI Streamlit Demo")
-st.write("App is hosted on Azure") 
+def getAccessToken():
+    client_id = st.secrets.client_id
+    client_secret = st.secrets.client_secret
+    tenant_id = st.secrets.tenant_id
+    
+    print(client_id)
+    url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
+    payload = {
+        'grant_type': 'client_credentials',
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'scope': 'https://dev.azuresynapse.net/.default'
+    }
 
-if 'flag' not in st.session_state:
-    st.session_state['flag'] = False
+    response = requests.post(url, data=payload)
+    access_token = response.json()['access_token']
+    print("Access token:", access_token)
 
-def set_flag():
-    st.session_state['flag'] = not st.session_state['flag']
+def triggerPipeline():
+    print("triggered")
+    workspace_name = 'usazr3-dmz-dev-syn-001-dwh'
+    pipeline_name = 'pl_update_profit_centers'
+    access_token = st.secrets.access_token
 
-st.button("Click me", on_click=set_flag)
+    url = f"https://{workspace_name}.dev.azuresynapse.net/pipelines/{pipeline_name}/createRun?api-version=2020-12-01"
+    headers = {
+            'Authorization': 'Bearer ' + access_token,
+            'Content-Type': 'application/json'
+    }
+    payload = {}
+    response = requests.post(url, headers=headers, json=payload)
+    print(response.status_code)
+    print(response.text)
+    
 
-st.write(f"Flag state: {st.session_state['flag']}")
 
-if st.session_state['flag']:
-    st.error("### Popup Message")
-    st.code("This is a simulated popup message displayed when the button is pressed.")
+def main():
 
-from azure.identity import ClientSecretCredential
-from azure.mgmt.synapse import SynapseManagementClient
-from azure.mgmt.synapse.models import CreateRunResponse
+    st.header("GPI Streamlit Demo")
+    st.write("App is hosted on Azure") 
 
-# Replace these values with your service principal and workspace details
-client_id = 'YOUR_CLIENT_ID'
-client_secret = 'YOUR_CLIENT_SECRET'
-tenant_id = 'YOUR_TENANT_ID'
-subscription_id = 'YOUR_SUBSCRIPTION_ID'
-resource_group_name = 'YOUR_RESOURCE_GROUP_NAME'
-workspace_name = 'YOUR_WORKSPACE_NAME'
-pipeline_name = 'YOUR_PIPELINE_NAME'
+    if 'flag' not in st.session_state:
+        st.session_state['flag'] = False
 
-# Authenticate using the service principal
-credentials = ClientSecretCredential(
-    client_id=client_id,
-    client_secret=client_secret,
-    tenant_id=tenant_id
-)
+    def set_flag():
+        st.session_state['flag'] = not st.session_state['flag']
 
-# Initialize Synapse management client
-synapse_client = SynapseManagementClient(credentials, subscription_id)
+    st.button("Click me", on_click=set_flag)
 
-# Run the pipeline
-response = synapse_client.pipeline_runs.create(
-    resource_group_name=resource_group_name,
-    workspace_name=workspace_name,
-    pipeline_name=pipeline_name,
-    parameters={}  # Add pipeline parameters here if needed
-)
+    st.write(f"Flag state: {st.session_state['flag']}")
 
-# Output the run ID
-print(f'Pipeline run initiated. Run ID: {response.run_id}')
+    if st.session_state['flag']:
+        st.error("### Popup Message")
+        st.code("This is a simulated popup message displayed when the button is pressed.")
+
+    st.button("Get Access Code", on_click=getAccessToken)
+    st.button("Trigger Pipline", on_click=triggerPipeline)
+
+
+if __name__ == "__main__":
+    main()
