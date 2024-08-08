@@ -30,6 +30,17 @@ def nav_page(page_name, timeout_secs=3):
     """ % (page_name, timeout_secs)
     html(nav_script)
 
+def mapLocally():
+    report = pd.read_excel("./app/data/Qlik file.xlsx")
+    mappings = pd.read_excel("./app/data/mappings.xlsx")
+
+    mappings['Clean PC'] = mappings['Plant/Profit Center Name'].str.split('Sales/COS',1).str[0]
+    mappings['Clean PC'] = mappings['Clean PC'].str.split('-',1).str[0]
+    mappings['Clean PC'] = mappings['Clean PC'].str.strip()
+
+    print(mappings)
+    # undefined = report[report['Profit Center'] == "Undefined"]
+
 def main():
 
     st.set_page_config(
@@ -54,7 +65,8 @@ def main():
 
     if st.button('Match Existing Profit Centers'):
         # triggerPipeline()
-        nav_page("Page1")
+        mapLocally()
+        nav_page("Mappings")
 
 
     

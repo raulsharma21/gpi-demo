@@ -1,15 +1,18 @@
 import streamlit as st
 import pandas as pd
+import os
 
 # Sample data
 if 'unmapped_df' not in st.session_state:
-    unmapped_data = {
-        'Origin ID': [1, 2],
-        'Origin City': ['New York', 'Los Angeles'],
-        'Destination ID': [101, 102],
-        'Destination City': ['Chicago', 'San Francisco'],
-        'Profit Center Code': [''] * 2  # Initially empty
-    }
+
+    # unmapped_data = {
+    #     'Origin ID': [1, 2],
+    #     'Origin City': ['New York', 'Los Angeles'],
+    #     'Destination ID': [101, 102],
+    #     'Destination City': ['Chicago', 'San Francisco'],
+    #     'Profit Center Code': [''] * 2  # Initially empty
+    # }
+    unmapped_data = pd.read_excel('./app/data/unmapped.xlsx')
     st.session_state.unmapped_df = pd.DataFrame(unmapped_data)
 
 
@@ -51,3 +54,6 @@ if option == 'Unmapped':
 else:
     st.header("Mapped")
     st.dataframe(mapped_df)
+
+
+st.button("Submit")
