@@ -2,58 +2,72 @@ import streamlit as st
 import pandas as pd
 import os
 
-# Sample data
+# button functionality
+def updateReportFile():
+    report = pd.read_excel("./app/data/Qlik file.xlsx")
+    print(report.sort_values(by='Profit Center'))
+
+    for i in range(len(report)):
+        # print(report.iloc[i]['Profit Center'])
+        if(report.iloc[i]['Profit Center']=='Undefined'):
+            shipment_num = report.iloc[i]['Shipment Num']
+
+            rows =  st.session_state.mapped_df[st.session_state.mapped_df['Shipment Num'] == shipment_num]
+            if len(rows) == 0:
+                print("No mapping")
+
+            elif len(rows) == 1:
+                print(shipment_num, rows['Legacy PC'].values[0])
+                # st.session_state.mapped_df.loc[report.iloc[i]['Shipment Num']]
+                report.at[i, 'Profit Center'] = rows['Legacy PC'].values[0]
+            else:
+                print("Shippment Num overlap")
+
+    print(report.sort_values(by='Profit Center'))
+    report.to_excel("./app/data/updated report.xlsx", index=False)
+
+
+
+# Check for data
 if 'unmapped_df' not in st.session_state:
+    print("Unmapped not in session")
 
-    # unmapped_data = {
-    #     'Origin ID': [1, 2],
-    #     'Origin City': ['New York', 'Los Angeles'],
-    #     'Destination ID': [101, 102],
-    #     'Destination City': ['Chicago', 'San Francisco'],
-    #     'Profit Center Code': [''] * 2  # Initially empty
-    # }
-    unmapped_data = pd.read_excel('./app/data/unmapped.xlsx')
-    st.session_state.unmapped_df = pd.DataFrame(unmapped_data)
+if 'mapped_df' not in st.session_state:
+    print("Unmapped not in session")
+
+if 'errors_df' not in st.session_state:
+    print("Errors not in session")
 
 
-mapped_data = {
-        'Origin ID': [3, 4],
-        'Origin City': ['Houston', 'Phoenix'],
-        'Destination ID': [103, 104],
-        'Destination City': ['Miami', 'Dallas'],
-        'Profit Center Code': ['PC01', 'PC02']
-}
-mapped_df = pd.DataFrame(mapped_data)
+st.title("Result")
+option = st.radio(" ", ('Mapped', 'Unmapped', 'Errors'))
 
-st.title("Select Table")
-option = st.radio(" ", ('Unmapped', 'Mapped'))
 
 if option == 'Unmapped':
     st.header("Unmapped")
 
-    # Display column headers
-    cols = st.columns((1, 1, 1, 1, 1))
-    headers = ['Origin ID', 'Origin City', 'Destination ID',
-                  'Destination City', 'Profit Center Code']
-    for col, header in zip(cols, headers):
-        col.write(f"**{header}**")
+    edited = st.data_editor(st.session_state.unmapped_df,
+                            column_order=['Profit Center Code','Dest City','Dest ID'],
+                            disabled=['Dest City','Dest ID'])
 
-    # Display rows with text input for Profit Center Code
-    for i in range(len(st.session_state.unmapped_df)):
-        cols = st.columns((1, 1, 1, 1, 1))
-        cols[0].write(st.session_state.unmapped_df.iloc[i, 0])
-        cols[1].write(st.session_state.unmapped_df.iloc[i, 1])
-        cols[2].write(st.session_state.unmapped_df.iloc[i, 2])
-        cols[3].write(st.session_state.unmapped_df.iloc[i, 3])
-        st.session_state.unmapped_df.at[i, 'Profit Center Code'] = cols[4].text_input(
-            "Profit Center Code",
-            st.session_state.unmapped_df.at[i, 'Profit Center Code'],
-            key=f"pcc_{i}"
-        )
+    st.button("Update Mappings")
+    st.button("Update Mappings and Rerun")
 
-else:
+elif option == 'Mapped':
     st.header("Mapped")
-    st.dataframe(mapped_df)
+    st.dataframe(st.session_state.mapped_df,
+                 column_order=['Origin ID', 'Origin City', 'Dest ID', 'Dest City', 'Profit Center Code', 'Legacy PC'])
+
+    if st.button("Update Report File"):
+        updateReportFile()
+
+elif option == 'Errors':
+    st.header("Errors")
+    st.text("Profit Centers were matched based on Dest ID.")
+    st.text("These records have the same Dest ID but different Profit Center Names.")
+    st.data_editor(st.session_state.errors_df,
+                   column_order=['Origin ID', 'Origin City', 'Dest ID', 'Dest City', 'Profit Center Code', 'Legacy PC'])
+
+    st.button("Save Corrections")
 
 
-st.button("Submit")

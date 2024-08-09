@@ -30,18 +30,41 @@ def nav_page(page_name, timeout_secs=3):
     """ % (page_name, timeout_secs)
     html(nav_script)
 
+def cleanPCColumn(mappings):
+    mappings['Clean PC'] = mappings['Plant/Profit Center Name'].str.split('Sales/COS').str[0]
+    mappings['Clean PC'] = mappings['Clean PC'].str.split('-').str[0]
+    mappings['Clean PC'] = mappings['Clean PC'].str.strip().str.upper()
+    return mappings
+
 def mapLocally():
-    report = pd.read_excel("./app/data/Qlik file.xlsx")
+    
     mappings = pd.read_excel("./app/data/mappings.xlsx")
+    mappings = cleanPCColumn(mappings)
 
-    mappings['Clean PC'] = mappings['Plant/Profit Center Name'].str.split('Sales/COS',1).str[0]
-    mappings['Clean PC'] = mappings['Clean PC'].str.split('-',1).str[0]
-    mappings['Clean PC'] = mappings['Clean PC'].str.strip()
 
-    print(mappings)
-    # undefined = report[report['Profit Center'] == "Undefined"]
+    report = pd.read_excel("./app/data/Qlik file.xlsx")
+    undefined = report[report['Profit Center'] == "Undefined"]
+
+    # match based on Destination City Code
+    undefined = pd.merge(undefined, mappings, how='left', left_on='Dest ID', right_on='Location Code')
+
+    # check for same code but different name
+    error_condition = undefined['Legacy PC'].notna() & (undefined['Dest City'].str.upper() != undefined['Clean PC'])
+    errors = undefined[error_condition]
+    undefined = undefined[~error_condition]
+    st.session_state.errors_df = errors
+
+    mapping_condition = undefined['Legacy PC'].notna()
+    existing_mappings = undefined[mapping_condition]
+    nonexisting_mappings = undefined[~mapping_condition]
+    nonexisting_mappings['Profit Center Code'] = ''
+
+    st.session_state.mapped_df = existing_mappings
+
+    st.session_state.unmapped_df = nonexisting_mappings
 
 def main():
+
 
     st.set_page_config(
     page_title="Profit Center POC",
@@ -61,17 +84,13 @@ def main():
     st.write(" ")
     st.write(" ")
 
-    st.text("Once the report file has been uploaded to cloud storage:")
+    st.text("Once the report file has been uploaded to storage:")
 
     if st.button('Match Existing Profit Centers'):
         # triggerPipeline()
         mapLocally()
         nav_page("Mappings")
 
-
-    
-
-    
 
 if __name__ == "__main__":
     main()
