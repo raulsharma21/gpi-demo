@@ -38,29 +38,32 @@ def cleanPCColumn(mappings):
 
 def mapLocally():
     
-    mappings = pd.read_excel("./app/data/mappings.xlsx")
+    mappings = pd.read_excel("./app/data/Profit Center Overrides.xlsx")
     mappings = cleanPCColumn(mappings)
 
 
-    report = pd.read_excel("./app/data/Qlik file.xlsx")
+    report = pd.read_excel("./app/data/Freight Analytics Export.xlsx")
     undefined = report[report['Profit Center'] == "Undefined"]
 
     # match based on Destination City Code
-    undefined = pd.merge(undefined, mappings, how='left', left_on='Dest ID', right_on='Location Code')
+    undefined = pd.merge(undefined, mappings, how='left', left_on='Dest ID', right_on='Load Reference ID')
 
     # check for same code but different name
-    error_condition = undefined['Legacy PC'].notna() & (undefined['Dest City'].str.upper() != undefined['Clean PC'])
+    error_condition = undefined['Profit Center Code'].notna() & (undefined['Dest City'].str.upper() != undefined['Clean PC'])
     errors = undefined[error_condition]
+    errors.reset_index(drop=True, inplace=True)
     undefined = undefined[~error_condition]
     st.session_state.errors_df = errors
 
-    mapping_condition = undefined['Legacy PC'].notna()
+    mapping_condition = undefined['Profit Center Code'].notna()
     existing_mappings = undefined[mapping_condition]
     nonexisting_mappings = undefined[~mapping_condition]
     nonexisting_mappings['Profit Center Code'] = ''
 
+    existing_mappings.reset_index(drop=True, inplace=True)
     st.session_state.mapped_df = existing_mappings
 
+    nonexisting_mappings.reset_index(drop=True, inplace=True)
     st.session_state.unmapped_df = nonexisting_mappings
 
 def main():
@@ -70,14 +73,13 @@ def main():
     page_title="Profit Center POC",
     )
 
-    
-    st.title("Profit Center Mapping")
+    st.title("Freight Analytics Accural Automation")
     st.write(" ")
     st.write(" ")
     st.write(" ")
     st.write(" ")
 
-    st.header("Proof Of Concept")
+    st.header("Profit Center Mapping Proof Of Concept")
 
     st.write(" ")
     st.write(" ")
