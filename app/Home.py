@@ -79,7 +79,7 @@ def main():
     st.write(" ")
     st.write(" ")
 
-    st.header("Profit Center Mapping Proof Of Concept")
+    st.header("Profit Center Mapping - Proof Of Concept")
 
     st.write(" ")
     st.write(" ")

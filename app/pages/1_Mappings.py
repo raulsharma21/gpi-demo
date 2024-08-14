@@ -15,14 +15,16 @@ def updateReportFile():
 
             rows =  st.session_state.mapped_df[st.session_state.mapped_df['Shipment Num'] == shipment_num]
             if len(rows) == 0:
-                print("No mapping")
+                continue
+                # print("No mapping")
 
             elif len(rows) == 1:
                 print(shipment_num, rows['Profit Center Code'].values[0])
                 # st.session_state.mapped_df.loc[report.iloc[i]['Shipment Num']]
                 report.at[i, 'Profit Center'] = rows['Profit Center Code'].values[0]
             else:
-                print("Shippment Num overlap")
+                continue
+                # print("Shippment Num overlap")
 
     # print(report.sort_values(by='Profit Center'))
     report.to_excel("./app/data/updated data.xlsx", index=False)
@@ -53,22 +55,16 @@ def addMappings():
 
 def updateMappingSheet():
     old_mappings = pd.read_excel("./app/data/Profit Center Overrides.xlsx")\
-    
-    print(old_mappings)
 
     for i in st.session_state.error_data['edited_rows']:
+        # print(st.session_state.error_data['edited_rows'][i])
         LR_ID = st.session_state.errors_df.at[i, 'Load Reference ID']
         
         new_city_value = st.session_state.error_data['edited_rows'][i]['Clean PC']
-        print(st.session_state.error_data['edited_rows'][i]['Clean PC'])
-
-        print(old_mappings[old_mappings['Load Reference ID'] == LR_ID])
 
         old_mappings.loc[old_mappings['Load Reference ID'] == LR_ID, 'Plant/Profit Center Name'] = new_city_value
 
-        print(old_mappings[old_mappings['Load Reference ID'] == LR_ID])
-
-    old_mappings.to_excel("./app/data/Profit Center Overrides.xlsx")
+    old_mappings.to_excel("./app/data/Profit Center Overrides.xlsx", index=False)
 
 
 # Check for data
@@ -76,7 +72,7 @@ if 'unmapped_df' not in st.session_state:
     print("Unmapped not in session")
 
 if 'mapped_df' not in st.session_state:
-    print("Unmapped not in session")
+    print("Mapped not in session")
 
 if 'errors_df' not in st.session_state:
     print("Errors not in session")
@@ -114,7 +110,7 @@ elif option == 'Errors':
     st.text("Profit Centers were matched based on Load Reference ID.")
     st.text("These records have matching Load Reference IDs but differing City Names.")
 
-    st.session_state.errors_df['Selected'] = False
+    # st.session_state.errors_df['Selected'] = False
     st.data_editor(st.session_state.errors_df,
                    key='error_data',
                    column_order=['Load Reference ID', 'Dest City', 'Clean PC', 'Profit Center Code', 'Selected'],
@@ -125,6 +121,6 @@ elif option == 'Errors':
     if st.button("Save Selected Changes to Mapping Sheet and Remap"):
         updateMappingSheet()
         mapLocally()
-    st.button("Approve Mapping for Selected Rows")
+    # st.button("Approve Mapping for Selected Rows")
 
 
